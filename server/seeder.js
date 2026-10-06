@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const Product = require("./models/Product");
 const products = require("./data/products");
+const categoryRoutes = require("./routes/categoryRoutes");
 
 dotenv.config();
 

@@ -1,31 +1,82 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState
+} from "react";
+
+import {
+  Link,
+  useNavigate
+} from "react-router-dom";
+
+import {
+  useCart
+} from "../context/CartContext";
+
+import {
+  useAuth
+} from "../context/AuthContext";
+
 import "../App.css";
 
-function App() {
-  const [products, setProducts] = useState([]);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [cartCount, setCartCount] = useState(0);
 
-  // Get products from Node/Express API
+function Home() {
+  const navigate = useNavigate();
+
+  const [products, setProducts] =
+    useState([]);
+
+  const [search, setSearch] =
+    useState("");
+
+  const [category, setCategory] =
+    useState("All");
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  const {
+    addToCart,
+    cartCount
+  } = useCart();
+
+  const {
+    user,
+    isCustomer,
+    isAdmin,
+    logout
+  } = useAuth();
+
+
+  // =====================================
+  // Load Products
+  // =====================================
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+        setError("");
 
         const response = await fetch(
           "http://localhost:5000/api/products"
         );
 
         if (!response.ok) {
-          throw new Error("Unable to load products");
+          throw new Error(
+            "Unable to load products"
+          );
         }
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
-        setProducts(data.products || []);
+        setProducts(
+          data.products || []
+        );
       } catch (err) {
         setError(err.message);
       } finally {
@@ -36,68 +87,194 @@ function App() {
     fetchProducts();
   }, []);
 
-  // Generate categories from products
-  const categories = useMemo(() => {
-    const productCategories = products
-      .map((product) => product.category)
-      .filter(Boolean);
 
-    return ["All", ...new Set(productCategories)];
+  // =====================================
+  // Categories
+  // =====================================
+
+  const categories = useMemo(() => {
+    const productCategories =
+      products
+        .map(
+          (product) =>
+            product.category
+        )
+        .filter(Boolean);
+
+    return [
+      "All",
+      ...new Set(
+        productCategories
+      )
+    ];
   }, [products]);
 
-  // Search + category filter
-  const filteredProducts = products.filter((product) => {
-    const productName = product.name?.toLowerCase() || "";
-    const searchText = search.toLowerCase();
 
-    const matchesSearch = productName.includes(searchText);
+  // =====================================
+  // Product Search / Filter
+  // =====================================
 
-    const matchesCategory =
-      category === "All" || product.category === category;
+  const filteredProducts =
+    products.filter(
+      (product) => {
+        const productName =
+          product.name
+            ?.toLowerCase() || "";
 
-    return matchesSearch && matchesCategory;
-  });
+        const searchText =
+          search.toLowerCase();
 
-  const addToCart = () => {
-    setCartCount((currentCount) => currentCount + 1);
+        const matchesSearch =
+          productName.includes(
+            searchText
+          );
+
+        const matchesCategory =
+          category === "All" ||
+          product.category ===
+            category;
+
+        return (
+          matchesSearch &&
+          matchesCategory
+        );
+      }
+    );
+
+
+  // =====================================
+  // Logout
+  // =====================================
+
+  const handleLogout = () => {
+    logout();
+
+    navigate("/", {
+      replace: true
+    });
   };
+
 
   return (
     <div className="app">
 
+      {/* ================================= */}
       {/* HEADER */}
+      {/* ================================= */}
+
       <header className="header">
+
         <div className="container navbar">
 
-          <div className="logo">
+          <Link
+            to="/"
+            className="logo"
+          >
             MERN<span>Shop</span>
-          </div>
+          </Link>
+
 
           <nav className="nav-links">
-            <a href="#home">Home</a>
-            <a href="#products">Products</a>
-            <a href="#categories">Categories</a>
+
+            <a href="#home">
+              Home
+            </a>
+
+            <a href="#products">
+              Products
+            </a>
+
+            <a href="#categories">
+              Categories
+            </a>
+
           </nav>
 
-          <div className="header-buttons">
-            <button className="login-button">
-              Login
-            </button>
 
-            <button className="cart-button">
+          <div className="header-buttons">
+
+            {/* Customer not logged in */}
+
+            {!user && (
+              <>
+                <Link
+                  to="/login"
+                  className="login-button"
+                >
+                  Login
+                </Link>
+
+                <Link
+                  to="/register"
+                  className="register-button"
+                >
+                  Register
+                </Link>
+              </>
+            )}
+
+
+            {/* Logged-in Customer */}
+
+            {isCustomer && (
+              <div className="customer-account">
+
+                <span className="customer-name">
+                  Hi, {user?.name}
+                </span>
+
+                <button
+                  type="button"
+                  className="logout-button"
+                  onClick={
+                    handleLogout
+                  }
+                >
+                  Logout
+                </button>
+
+              </div>
+            )}
+
+
+            {/* Logged-in Admin */}
+
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="login-button"
+              >
+                Admin Panel
+              </Link>
+            )}
+
+
+            <Link
+              to="/cart"
+              className="cart-button"
+            >
               🛒 Cart
+
               <span className="cart-count">
                 {cartCount}
               </span>
-            </button>
+            </Link>
+
           </div>
 
         </div>
+
       </header>
 
 
+      {/* ================================= */}
       {/* HERO */}
-      <section className="hero" id="home">
+      {/* ================================= */}
+
+      <section
+        className="hero"
+        id="home"
+      >
 
         <div className="container hero-container">
 
@@ -109,16 +286,24 @@ function App() {
 
             <h1>
               Everything you need,
-              <span> all in one place.</span>
+              <span>
+                {" "}
+                all in one place.
+              </span>
             </h1>
 
             <p>
-              Discover quality products at great prices.
-              Shop electronics, fashion, footwear,
-              accessories and much more.
+              Discover quality products
+              at great prices. Shop
+              electronics, fashion,
+              footwear, accessories and
+              much more.
             </p>
 
-            <a href="#products" className="shop-now">
+            <a
+              href="#products"
+              className="shop-now"
+            >
               Shop Now →
             </a>
 
@@ -131,10 +316,13 @@ function App() {
               🛍️
             </div>
 
-            <h2>Big Savings</h2>
+            <h2>
+              Big Savings
+            </h2>
 
             <p>
-              Find amazing products for every budget.
+              Find amazing products for
+              every budget.
             </p>
 
             <div className="offer">
@@ -148,7 +336,10 @@ function App() {
       </section>
 
 
+      {/* ================================= */}
       {/* SEARCH */}
+      {/* ================================= */}
+
       <section
         className="search-area"
         id="categories"
@@ -158,14 +349,18 @@ function App() {
 
           <div className="search-box">
 
-            <span>🔍</span>
+            <span>
+              🔍
+            </span>
 
             <input
               type="text"
               placeholder="Search products..."
               value={search}
               onChange={(event) =>
-                setSearch(event.target.value)
+                setSearch(
+                  event.target.value
+                )
               }
             />
 
@@ -175,20 +370,24 @@ function App() {
           <select
             value={category}
             onChange={(event) =>
-              setCategory(event.target.value)
+              setCategory(
+                event.target.value
+              )
             }
           >
 
-            {categories.map((item) => (
-              <option
-                key={item}
-                value={item}
-              >
-                {item === "All"
-                  ? "All Categories"
-                  : item}
-              </option>
-            ))}
+            {categories.map(
+              (item) => (
+                <option
+                  key={item}
+                  value={item}
+                >
+                  {item === "All"
+                    ? "All Categories"
+                    : item}
+                </option>
+              )
+            )}
 
           </select>
 
@@ -197,7 +396,10 @@ function App() {
       </section>
 
 
+      {/* ================================= */}
       {/* PRODUCTS */}
+      {/* ================================= */}
+
       <main
         className="container products-section"
         id="products"
@@ -206,15 +408,22 @@ function App() {
         <div className="section-header">
 
           <div>
+
             <span className="section-small">
               SHOP PRODUCTS
             </span>
 
-            <h2>Featured Products</h2>
+            <h2>
+              Featured Products
+            </h2>
+
           </div>
 
           <p>
-            {filteredProducts.length} products found
+            {
+              filteredProducts.length
+            }{" "}
+            products found
           </p>
 
         </div>
@@ -236,7 +445,8 @@ function App() {
 
         {!loading &&
           !error &&
-          filteredProducts.length === 0 && (
+          filteredProducts.length ===
+            0 && (
             <div className="status-message">
               No products found.
             </div>
@@ -245,145 +455,205 @@ function App() {
 
         <div className="product-grid">
 
-          {filteredProducts.map((product) => (
+          {filteredProducts.map(
+            (product) => (
 
-            <div
-              className="product-card"
-              key={product._id}
-            >
+              <div
+                className="product-card"
+                key={product._id}
+              >
 
-              <div className="product-image">
+                <div className="product-image">
 
-                {product.image ? (
+                  {product.image ? (
 
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                  />
+                    <img
+                      src={
+                        product.image
+                      }
+                      alt={
+                        product.name
+                      }
+                    />
 
-                ) : (
-
-                  <div className="product-placeholder">
-                    📦
-                  </div>
-
-                )}
-
-                <span className="category-label">
-                  {product.category}
-                </span>
-
-              </div>
-
-
-              <div className="product-info">
-
-                <div className="brand">
-                  {product.brand || "MERNShop"}
-                </div>
-
-                <h3>{product.name}</h3>
-
-                <p className="product-description">
-                  {product.description}
-                </p>
-
-
-                <div className="stock">
-
-                  {product.stock > 0 ? (
-                    <>
-                      ✓ In Stock ({product.stock})
-                    </>
                   ) : (
-                    <span className="out-of-stock">
-                      Out of Stock
-                    </span>
+
+                    <div className="product-placeholder">
+                      📦
+                    </div>
+
                   )}
 
+
+                  <span className="category-label">
+                    {
+                      product.category
+                    }
+                  </span>
+
                 </div>
 
 
-                <div className="product-bottom">
+                <div className="product-info">
 
-                  <div className="price">
-                    ₹
-                    {Number(
-                      product.price
-                    ).toLocaleString("en-IN")}
+                  <div className="brand">
+                    {product.brand ||
+                      "MERNShop"}
                   </div>
 
-                  <button
-                    className="add-cart"
-                    onClick={addToCart}
-                    disabled={product.stock <= 0}
-                  >
-                    Add to Cart
-                  </button>
+                  <h3>
+                    {product.name}
+                  </h3>
+
+                  <p className="product-description">
+                    {
+                      product.description
+                    }
+                  </p>
+
+
+                  <div className="stock">
+
+                    {product.stock >
+                    0 ? (
+                      <>
+                        ✓ In Stock (
+                        {
+                          product.stock
+                        }
+                        )
+                      </>
+                    ) : (
+                      <span className="out-of-stock">
+                        Out of Stock
+                      </span>
+                    )}
+
+                  </div>
+
+
+                  <div className="product-bottom">
+
+                    <div className="price">
+                      ₹
+                      {Number(
+                        product.price
+                      ).toLocaleString(
+                        "en-IN"
+                      )}
+                    </div>
+
+
+                    <button
+                      className="add-cart"
+                      onClick={() =>
+                        addToCart(
+                          product
+                        )
+                      }
+                      disabled={
+                        product.stock <=
+                        0
+                      }
+                    >
+                      Add to Cart
+                    </button>
+
+                  </div>
 
                 </div>
 
               </div>
 
-            </div>
-
-          ))}
+            )
+          )}
 
         </div>
 
       </main>
 
 
+      {/* ================================= */}
       {/* FEATURES */}
+      {/* ================================= */}
+
       <section className="features">
 
         <div className="container feature-grid">
 
           <div className="feature">
-            <div>🚚</div>
+
+            <div>
+              🚚
+            </div>
 
             <section>
-              <strong>Free Delivery</strong>
+              <strong>
+                Free Delivery
+              </strong>
+
               <span>
                 On selected orders
               </span>
             </section>
+
           </div>
 
 
           <div className="feature">
-            <div>🔒</div>
+
+            <div>
+              🔒
+            </div>
 
             <section>
-              <strong>Secure Payment</strong>
+              <strong>
+                Secure Payment
+              </strong>
+
               <span>
                 100% secure checkout
               </span>
             </section>
+
           </div>
 
 
           <div className="feature">
-            <div>↩️</div>
+
+            <div>
+              ↩️
+            </div>
 
             <section>
-              <strong>Easy Returns</strong>
+              <strong>
+                Easy Returns
+              </strong>
+
               <span>
                 Hassle-free returns
               </span>
             </section>
+
           </div>
 
 
           <div className="feature">
-            <div>💬</div>
+
+            <div>
+              💬
+            </div>
 
             <section>
-              <strong>24/7 Support</strong>
+              <strong>
+                24/7 Support
+              </strong>
+
               <span>
                 We're here to help
               </span>
             </section>
+
           </div>
 
         </div>
@@ -391,12 +661,16 @@ function App() {
       </section>
 
 
+      {/* ================================= */}
       {/* FOOTER */}
+      {/* ================================= */}
+
       <footer className="footer">
 
         <div className="container footer-container">
 
           <div>
+
             <div className="footer-logo">
               MERN<span>Shop</span>
             </div>
@@ -405,27 +679,49 @@ function App() {
               Your modern MERN stack
               e-commerce store.
             </p>
+
           </div>
 
 
           <div>
-            <h4>Shop</h4>
-            <a href="#products">Products</a>
-            <a href="#categories">Categories</a>
+
+            <h4>
+              Shop
+            </h4>
+
+            <a href="#products">
+              Products
+            </a>
+
+            <a href="#categories">
+              Categories
+            </a>
+
           </div>
 
 
           <div>
-            <h4>Customer Service</h4>
-            <a href="#home">Contact Us</a>
-            <a href="#home">Returns</a>
+
+            <h4>
+              Customer Service
+            </h4>
+
+            <a href="#home">
+              Contact Us
+            </a>
+
+            <a href="#home">
+              Returns
+            </a>
+
           </div>
 
         </div>
 
 
         <div className="copyright">
-          © 2026 MERNShop. All rights reserved.
+          © 2026 MERNShop. All rights
+          reserved.
         </div>
 
       </footer>
@@ -434,4 +730,4 @@ function App() {
   );
 }
 
-export default App;
+export default Home;

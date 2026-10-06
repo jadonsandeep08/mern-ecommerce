@@ -7,10 +7,12 @@ function AdminSidebar() {
         MERN<span>Shop</span>
       </div>
 
-      <div className="admin-label">ADMIN PANEL</div>
+      <div className="admin-label">
+        ADMIN PANEL
+      </div>
 
       <nav className="admin-menu">
-        <NavLink to="/admin">
+        <NavLink to="/admin" end>
           📊 Dashboard
         </NavLink>
 
@@ -19,11 +21,15 @@ function AdminSidebar() {
         </NavLink>
 
         <NavLink to="/admin/categories">
-          🗂️ Categories
+          📁 Categories
         </NavLink>
 
         <NavLink to="/admin/attributes">
           ⚙️ Attributes
+        </NavLink>
+
+        <NavLink to="/admin/orders">
+          🛒 Orders
         </NavLink>
       </nav>
 
